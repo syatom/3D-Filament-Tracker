@@ -32,7 +32,7 @@
 <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
     {% for filament in filaments %}
     <div class="col">
-        <div class="card h-100 shadow-sm filament-card" onclick="window.location='{{ url_for('filaments.filament_history', id=filament.id) }}'" style="cursor: pointer;">
+        <div class="card h-100 shadow-sm filament-card" onclick="window.location='{{ url_for('filaments.filament_history', id=filament.id) }}'" style="cursor: pointer; border-left: 4px solid {{ filament.color_hex or '#6ea8fe' }};">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <h5 class="card-title mb-0">{{ filament.type }}</h5>

@@ -24,11 +24,7 @@ main {
 /* Filament Cards */
 .filament-card {
     cursor: pointer;
-    border-left: 4px solid #0d6efd;
-}
-
-.filament-card:hover {
-    border-left-color: #0b5ed7;
+    /* Dynamic border-left color set via inline style in templates */
 }
 
 /* Filament Color Circle */
@@ -69,7 +65,7 @@ main {
 
 /* Tables */
 .table-hover tbody tr:hover {
-    background-color: rgba(0, 123, 255, 0.05);
+    background-color: rgba(13, 110, 253, 0.05);
 }
 
 /* Badge Styles */
@@ -217,6 +213,11 @@ html {
     --bs-body-color: #e0e0e0;
     --bs-card-bg: #1e1e1e;
     --bs-border-color: #333;
+    /* Bootstrap primary color override for dark mode */
+    --bs-primary: #6ea8fe;
+    --bs-primary-rgb: 110, 168, 254;
+    --bs-link-color: #6ea8fe;
+    --bs-link-hover-color: #5a8fdb;
 }
 
 /* Dark mode card enhancements */
@@ -229,14 +230,7 @@ html {
     box-shadow: 0 0.5rem 1rem rgba(255, 255, 255, 0.1) !important;
 }
 
-/* Dark mode filament cards */
-[data-bs-theme="dark"] .filament-card {
-    border-left-color: #4a8eff;
-}
-
-[data-bs-theme="dark"] .filament-card:hover {
-    border-left-color: #6aa0ff;
-}
+/* Dark mode filament cards use dynamic inline styles */
 
 /* Dark mode color circle border */
 [data-bs-theme="dark"] .filament-color-circle {
@@ -245,7 +239,7 @@ html {
 
 /* Dark mode table hover */
 [data-bs-theme="dark"] .table-hover tbody tr:hover {
-    background-color: rgba(74, 142, 255, 0.1);
+    background-color: rgba(110, 168, 254, 0.1);
 }
 
 /* Dark mode footer */
@@ -261,8 +255,8 @@ html {
 
 /* Dark mode form inputs */
 [data-bs-theme="dark"] .form-control:focus {
-    border-color: #4a8eff;
-    box-shadow: 0 0 0 0.2rem rgba(74, 142, 255, 0.25);
+    border-color: #6ea8fe;
+    box-shadow: 0 0 0 0.2rem rgba(110, 168, 254, 0.25);
 }
 
 /* Dark mode dropdown menu */

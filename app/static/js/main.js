@@ -45,19 +45,26 @@ function toggleDarkMode() {
     },
     credentials: "same-origin",
   })
-    .then((response) => response.json())
+    .then((response) => {
+      if (!response.ok) {
+        console.error("Server error:", response.status, response.statusText);
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
     .then((data) => {
       if (!data.success) {
         console.error("Failed to save dark mode preference:", data.error);
-        // Optionally revert the change
+        // Revert the change
         htmlElement.setAttribute("data-bs-theme", currentTheme);
         updateDarkModeIcon(currentTheme === "dark");
       }
     })
     .catch((error) => {
       console.error("Error toggling dark mode:", error);
-      // Keep the visual change even if save fails
-      // User will see the new theme but it won't persist
+      // Revert the visual change if save fails
+      htmlElement.setAttribute("data-bs-theme", currentTheme);
+      updateDarkModeIcon(currentTheme === "dark");
     });
 }
 
