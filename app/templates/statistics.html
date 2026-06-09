@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block title %}Statistics - Spool Tracker{% endblock %}
+
+{% block content %}
+<h2 class="mb-4"><i class="bi bi-graph-up"></i> Statistics & Reporting</h2>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary shadow">
+            <div class="card-body text-center">
+                <h3 class="mb-0">{{ total_used|round(1) }}g</h3>
+                <small>Total Filament Used</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success shadow">
+            <div class="card-body text-center">
+                <h3 class="mb-0">{{ total_prints }}</h3>
+                <small>Total Prints</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info shadow">
+            <div class="card-body text-center">
+                <h3 class="mb-0">{{ active_count }}</h3>
+                <small>Active Spools</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-secondary shadow">
+            <div class="card-body text-center">
+                <h3 class="mb-0">{{ archived_count }}</h3>
+                <small>Archived Spools</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Low Filament Warnings -->
+{% if low_filaments %}
+<div class="alert alert-warning shadow" role="alert">
+    <h5 class="alert-heading"><i class="bi bi-exclamation-triangle"></i> Low Filament Warnings</h5>
+    <p>The following filaments are running low (less than 20%):</p>
+    <ul class="mb-0">
+        {% for filament in low_filaments %}
+        <li>
+            <strong>{{ filament.type }} - {{ filament.color }}</strong>: 
+            {{ filament.current_weight|round(1) }}g ({{ filament.remaining_percentage|round(1) }}%)
+            <a href="{{ url_for('filaments.filament_history', id=filament.id) }}" class="alert-link">View Details</a>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<div class="row">
+    <!-- Usage by Type Chart -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Usage by Filament Type</h5>
+            </div>
+            <div class="card-body">
+                {% if usage_by_type %}
+                <canvas id="typeChart"></canvas>
+                {% else %}
+                <p class="text-center text-muted py-4">No usage data available</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Usage by Color Chart -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Usage by Color</h5>
+            </div>
+            <div class="card-body">
+                {% if usage_by_color %}
+                <canvas id="colorChart"></canvas>
+                {% else %}
+                <p class="text-center text-muted py-4">No usage data available</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Most Used Filaments Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Most Used Filament Spools</h5>
+            </div>
+            <div class="card-body">
+                {% if most_used_filaments %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Type</th>
+                                <th>Color</th>
+                                <th>Status</th>
+                                <th class="text-end">Total Used</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for filament, total in most_used_filaments %}
+                            <tr>
+                                <td><strong>#{{ loop.index }}</strong></td>
+                                <td>{{ filament.type }}</td>
+                                <td>{{ filament.color }}</td>
+                                <td>
+                                    {% if filament.is_archived %}
+                                    <span class="badge bg-secondary">Archived</span>
+                                    {% else %}
+                                    <span class="badge bg-success">Active</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end"><strong>{{ total|round(1) }}g</strong></td>
+                                <td>
+                                    <a href="{{ url_for('filaments.filament_history', id=filament.id) }}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        View History
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-center text-muted py-4">No usage data available</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<script>
+// Usage by Type Chart
+{% if usage_by_type %}
+const typeCtx = document.getElementById('typeChart');
+new Chart(typeCtx, {
+    type: 'bar',
+    data: {
+        labels: {{ type_labels|tojson }},
+        datasets: [{
+            label: 'Weight Used (g)',
+            data: {{ type_data|tojson }},
+            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return value + 'g';
+                    }
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+    }
+});
+{% endif %}
+
+// Usage by Color Chart
+{% if usage_by_color %}
+const colorCtx = document.getElementById('colorChart');
+new Chart(colorCtx, {
+    type: 'doughnut',
+    data: {
+        labels: {{ color_labels|tojson }},
+        datasets: [{
+            label: 'Weight Used (g)',
+            data: {{ color_data|tojson }},
+            backgroundColor: [
+                'rgba(255, 99, 132, 0.5)',
+                'rgba(54, 162, 235, 0.5)',
+                'rgba(255, 206, 86, 0.5)',
+                'rgba(75, 192, 192, 0.5)',
+                'rgba(153, 102, 255, 0.5)',
+                'rgba(255, 159, 64, 0.5)',
+                'rgba(199, 199, 199, 0.5)',
+                'rgba(83, 102, 255, 0.5)',
+                'rgba(255, 99, 255, 0.5)',
+                'rgba(99, 255, 132, 0.5)'
+            ],
+            borderColor: [
+                'rgba(255, 99, 132, 1)',
+                'rgba(54, 162, 235, 1)',
+                'rgba(255, 206, 86, 1)',
+                'rgba(75, 192, 192, 1)',
+                'rgba(153, 102, 255, 1)',
+                'rgba(255, 159, 64, 1)',
+                'rgba(199, 199, 199, 1)',
+                'rgba(83, 102, 255, 1)',
+                'rgba(255, 99, 255, 1)',
+                'rgba(99, 255, 132, 1)'
+            ],
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'right'
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return context.label + ': ' + context.parsed + 'g';
+                    }
+                }
+            }
+        }
+    }
+});
+{% endif %}
+</script>
+{% endblock %}

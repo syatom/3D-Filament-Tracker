@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Add Usage - Spool Tracker{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <!-- Filament Info -->
+        <div class="card mb-3 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <div style="display: inline-flex; align-items: center; gap: 10px;">
+                        <span class="filament-color-circle" style="background-color: {{ filament.color_hex or '#808080' }};"></span>
+                        <span>{{ filament.type }} - {{ filament.color }}</span>
+                    </div>
+                </h5>
+                <p class="mb-1"><strong>Available:</strong> {{ filament.current_weight|round(1) }}g</p>
+                <div class="progress" style="height: 20px;">
+                    {% set percentage = filament.remaining_percentage %}
+                    {% if percentage >= 50 %}
+                        {% set bar_color = 'bg-success' %}
+                    {% elif percentage >= 20 %}
+                        {% set bar_color = 'bg-warning' %}
+                    {% else %}
+                        {% set bar_color = 'bg-danger' %}
+                    {% endif %}
+                    <div class="progress-bar {{ bar_color }}" style="width: {{ percentage }}%">
+                        {{ percentage|round(1) }}%
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Usage Form -->
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0"><i class="bi bi-plus-circle"></i> Record Usage</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('filaments.add_usage', id=filament.id) }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.weight_used.label(class="form-label") }}
+                        {{ form.weight_used(class="form-control" + (" is-invalid" if form.weight_used.errors else ""), placeholder="e.g., 25.5") }}
+                        {% if form.weight_used.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.weight_used.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.print_name.label(class="form-label") }}
+                        {{ form.print_name(class="form-control" + (" is-invalid" if form.print_name.errors else ""), placeholder="e.g., Phone Stand") }}
+                        <div class="form-text">{{ form.print_name.description }}</div>
+                        {% if form.print_name.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.print_name.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.component_name.label(class="form-label") }}
+                        {{ form.component_name(class="form-control" + (" is-invalid" if form.component_name.errors else ""), placeholder="e.g., Base") }}
+                        <div class="form-text">{{ form.component_name.description }}</div>
+                        {% if form.component_name.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.component_name.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        {{ form.submit(class="btn btn-primary btn-lg") }}
+                        <a href="{{ url_for('filaments.filament_history', id=filament.id) }}" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Overflow Modal -->
+{% if overflow %}
+<div class="modal fade show" id="overflowModal" tabindex="-1" style="display: block; background: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title"><i class="bi bi-exclamation-triangle"></i> Usage Exceeds Remaining Weight</h5>
+            </div>
+            <div class="modal-body">
+                <p>The usage amount (<strong>{{ weight_used }}g</strong>) exceeds the remaining filament (<strong>{{ filament.current_weight|round(1) }}g</strong>).</p>
+                <p>Overflow: <strong class="text-danger">{{ overflow_amount|round(1) }}g</strong></p>
+                <p>Please provide details for a new filament spool to account for the overflow:</p>
+                
+                <form method="POST" action="{{ url_for('filaments.add_usage_with_overflow', id=filament.id) }}" id="overflowForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="weight_used" value="{{ weight_used }}">
+                    <input type="hidden" name="print_name" value="{{ print_name }}">
+                    <input type="hidden" name="component_name" value="{{ component_name }}">
+                    
+                    <div class="mb-3">
+                        <label for="new_type" class="form-label">New Spool Type</label>
+                        <input type="text" class="form-control" id="new_type" name="new_type" 
+                               value="{{ filament.type }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="new_color" class="form-label">New Spool Color</label>
+                        <input type="text" class="form-control" id="new_color" name="new_color" 
+                               value="{{ filament.color }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="new_starting_weight" class="form-label">New Spool Starting Weight (g)</label>
+                        <input type="number" step="0.1" class="form-control" id="new_starting_weight" 
+                               name="new_starting_weight" value="{{ filament.starting_weight }}" required>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <small>
+                            <strong>What will happen:</strong><br>
+                            1. Current spool will use its remaining {{ filament.current_weight|round(1) }}g and be archived<br>
+                            2. New spool will be created and {{ overflow_amount|round(1) }}g will be deducted from it
+                        </small>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-check-circle"></i> Create New Spool & Record Usage
+                        </button>
+                        <a href="{{ url_for('filaments.add_usage', id=filament.id) }}" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

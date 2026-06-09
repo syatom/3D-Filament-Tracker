@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found - Spool Tracker{% endblock %}
+
+{% block content %}
+<div class="empty-state py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 text-center">
+            <i class="bi bi-exclamation-triangle-fill text-warning" style="font-size: 5rem;"></i>
+            <h1 class="display-1 fw-bold text-primary mt-4">404</h1>
+            <h2 class="mb-4">Page Not Found</h2>
+            <p class="lead text-muted mb-4">
+                Oops! The page you're looking for doesn't exist. 
+                It might have been moved or deleted.
+            </p>
+            <div class="d-flex gap-2 justify-content-center">
+                <a href="{{ url_for('main.index') }}" class="btn btn-primary btn-lg">
+                    <i class="bi bi-house"></i> Go to Dashboard
+                </a>
+                <a href="javascript:history.back()" class="btn btn-outline-secondary btn-lg">
+                    <i class="bi bi-arrow-left"></i> Go Back
+                </a>
+            </div>
+            
+            <div class="mt-5">
+                <p class="text-muted">Need help?</p>
+                <div class="d-flex gap-3 justify-content-center flex-wrap">
+                    <a href="{{ url_for('filaments.add_filament') }}" class="text-decoration-none">
+                        <i class="bi bi-plus-circle"></i> Add Filament
+                    </a>
+                    <a href="{{ url_for('main.statistics') }}" class="text-decoration-none">
+                        <i class="bi bi-graph-up"></i> View Statistics
+                    </a>
+                    <a href="{{ url_for('filaments.archived') }}" class="text-decoration-none">
+                        <i class="bi bi-archive"></i> Archived Filaments
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

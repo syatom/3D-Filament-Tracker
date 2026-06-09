@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Filament - Spool Tracker{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow">
+            <div class="card-header bg-warning">
+                <h3 class="mb-0"><i class="bi bi-pencil"></i> Edit Filament</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('filaments.edit_filament', id=filament.id) }}">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.type.label(class="form-label") }}
+                        {{ form.type(class="form-control" + (" is-invalid" if form.type.errors else "")) }}
+                        <div class="form-text">{{ form.type.description }}</div>
+                        {% if form.type.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.type.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.color.label(class="form-label") }}
+                        {{ form.color(class="form-control" + (" is-invalid" if form.color.errors else "")) }}
+                        <div class="form-text">{{ form.color.description }}</div>
+                        {% if form.color.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.color.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.color_hex.label(class="form-label") }}
+                        <div class="d-flex gap-2 align-items-center">
+                            {{ form.color_hex(type="color", class="form-control form-control-color" + (" is-invalid" if form.color_hex.errors else ""), style="width: 80px; height: 40px;") }}
+                            {{ form.color_hex(class="form-control" + (" is-invalid" if form.color_hex.errors else ""), placeholder="#808080", style="flex: 1;") }}
+                        </div>
+                        <div class="form-text">{{ form.color_hex.description }}</div>
+                        {% if form.color_hex.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.color_hex.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.starting_weight.label(class="form-label") }}
+                        {{ form.starting_weight(class="form-control" + (" is-invalid" if form.starting_weight.errors else "")) }}
+                        <div class="form-text">Note: Changing starting weight will adjust current weight proportionally</div>
+                        {% if form.starting_weight.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.starting_weight.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <strong>Current Weight:</strong> {{ filament.current_weight|round(1) }}g<br>
+                        <strong>Used So Far:</strong> {{ (filament.starting_weight - filament.current_weight)|round(1) }}g
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        {{ form.submit(class="btn btn-warning btn-lg") }}
+                        <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
