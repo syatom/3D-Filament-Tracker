@@ -82,6 +82,7 @@
                                 <th>Print Name</th>
                                 <th>Component</th>
                                 <th class="text-end">Weight Used</th>
+                                <th class="text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -96,12 +97,25 @@
                                 <td class="text-end">
                                     <span class="badge bg-info">{{ record.weight_used|round(1) }}g</span>
                                 </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#deleteUsageModal"
+                                            data-usage-id="{{ record.id }}"
+                                            data-print-name="{{ record.print_name }}"
+                                            data-component="{{ record.component_name }}"
+                                            data-weight="{{ record.weight_used|round(1) }}"
+                                            data-timestamp="{{ record.timestamp.strftime('%Y-%m-%d %H:%M') }}"
+                                            title="Delete usage record">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
                         <tfoot>
                             <tr class="table-active">
-                                <td colspan="3" class="text-end"><strong>Total Used:</strong></td>
+                                <td colspan="4" class="text-end"><strong>Total Used:</strong></td>
                                 <td class="text-end">
                                     <strong>{{ (filament.starting_weight - filament.current_weight)|round(1) }}g</strong>
                                 </td>
@@ -120,6 +134,41 @@
                     {% endif %}
                 </div>
                 {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteUsageModal" tabindex="-1" aria-labelledby="deleteUsageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteUsageModalLabel">
+                    <i class="bi bi-exclamation-triangle"></i> Confirm Delete
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">Are you sure you want to delete this usage record?</p>
+                <div class="alert alert-info">
+                    <strong>Usage Details:</strong><br>
+                    <i class="bi bi-calendar-event"></i> <span id="modal-timestamp"></span><br>
+                    <i class="bi bi-printer"></i> <strong>Print:</strong> <span id="modal-print-name"></span><br>
+                    <i class="bi bi-puzzle"></i> <strong>Component:</strong> <span id="modal-component"></span><br>
+                    <i class="bi bi-arrow-down-circle"></i> <strong>Weight Used:</strong> <span id="modal-weight"></span>g
+                </div>
+                <div class="alert alert-warning">
+                    <i class="bi bi-info-circle"></i> The weight will be restored to the filament.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="bi bi-trash"></i> Delete Usage
+                </button>
             </div>
         </div>
     </div>

@@ -1,5 +1,5 @@
 """Filament management routes"""
-from flask import Blueprint, render_template, redirect, url_for, flash, request, abort
+from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, jsonify
 from flask_login import login_required, current_user
 from app import db
 from app.models import Filament, PrintHistory
@@ -253,3 +253,43 @@ def archived():
     return render_template('filaments/archived.html',
                          title='Archived Filaments',
                          filaments=archived_filaments)
+
+
+@filaments_bp.route('/<int:filament_id>/usage/<int:usage_id>/delete', methods=['POST'])
+@login_required
+def delete_usage(filament_id, usage_id):
+    """Delete a usage record and restore weight to filament"""
+    # Get the filament and verify ownership
+    filament = Filament.query.get_or_404(filament_id)
+    
+    if filament.user_id != current_user.id:
+        abort(403)
+    
+    # Get the usage record
+    usage = PrintHistory.query.get_or_404(usage_id)
+    
+    # Verify the usage belongs to this filament
+    if usage.filament_id != filament.id:
+        return jsonify({'success': False, 'error': 'Usage does not belong to this filament'}), 400
+    
+    # Store weight for restoration
+    weight_to_restore = usage.weight_used
+    
+    # Restore weight to filament
+    filament.current_weight += weight_to_restore
+    
+    # Check if filament should be unarchived
+    if filament.is_archived and filament.current_weight > 0:
+        filament.unarchive()
+    
+    # Delete the usage record
+    db.session.delete(usage)
+    db.session.commit()
+    
+    return jsonify({
+        'success': True,
+        'message': f'Usage deleted. {weight_to_restore:.1f}g restored to filament.',
+        'weight_restored': weight_to_restore,
+        'new_current_weight': filament.current_weight,
+        'was_unarchived': filament.is_archived == False and weight_to_restore > 0
+    })

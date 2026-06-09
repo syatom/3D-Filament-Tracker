@@ -101,4 +101,106 @@ document.addEventListener("DOMContentLoaded", function () {
       toggleDarkMode();
     });
   }
+
+  // Initialize delete usage modal if it exists
+  initializeDeleteUsageModal();
 });
+
+// ========================================
+// DELETE USAGE FUNCTIONALITY
+// ========================================
+
+/**
+ * Initialize delete usage modal and handlers
+ */
+function initializeDeleteUsageModal() {
+  const deleteModal = document.getElementById("deleteUsageModal");
+  
+  if (!deleteModal) {
+    return; // Modal doesn't exist on this page
+  }
+
+  let currentUsageId = null;
+  let currentFilamentId = null;
+
+  // Handle modal show event - populate with usage details
+  deleteModal.addEventListener("show.bs.modal", function (event) {
+    const button = event.relatedTarget; // Button that triggered the modal
+    
+    // Extract data from button attributes
+    currentUsageId = button.getAttribute("data-usage-id");
+    currentFilamentId = button.closest("[data-filament-id]")?.getAttribute("data-filament-id") || 
+                        window.location.pathname.split("/")[2]; // Extract from URL if not in DOM
+    
+    const printName = button.getAttribute("data-print-name");
+    const component = button.getAttribute("data-component");
+    const weight = button.getAttribute("data-weight");
+    const timestamp = button.getAttribute("data-timestamp");
+
+    // Update modal content
+    document.getElementById("modal-timestamp").textContent = timestamp;
+    document.getElementById("modal-print-name").textContent = printName;
+    document.getElementById("modal-component").textContent = component;
+    document.getElementById("modal-weight").textContent = weight;
+  });
+
+  // Handle delete confirmation
+  const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
+  if (confirmDeleteBtn) {
+    confirmDeleteBtn.addEventListener("click", function () {
+      if (!currentUsageId || !currentFilamentId) {
+        console.error("Missing usage or filament ID");
+        return;
+      }
+
+      // Disable button and show loading state
+      confirmDeleteBtn.disabled = true;
+      confirmDeleteBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Deleting...';
+
+      // Make AJAX request to delete
+      fetch(`/filaments/${currentFilamentId}/usage/${currentUsageId}/delete`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCsrfToken(),
+        },
+        credentials: "same-origin",
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then((data) => {
+          if (data.success) {
+            // Close modal
+            const modalInstance = bootstrap.Modal.getInstance(deleteModal);
+            modalInstance.hide();
+
+            // Show success message and reload page
+            // Reloading ensures all data (totals, progress bars, etc.) is accurate
+            window.location.reload();
+          } else {
+            throw new Error(data.error || "Failed to delete usage");
+          }
+        })
+        .catch((error) => {
+          console.error("Error deleting usage:", error);
+          alert("Error deleting usage record. Please try again.");
+          
+          // Re-enable button
+          confirmDeleteBtn.disabled = false;
+          confirmDeleteBtn.innerHTML = '<i class="bi bi-trash"></i> Delete Usage';
+        });
+    });
+  }
+
+  // Reset button state when modal is hidden
+  deleteModal.addEventListener("hidden.bs.modal", function () {
+    if (confirmDeleteBtn) {
+      confirmDeleteBtn.disabled = false;
+      confirmDeleteBtn.innerHTML = '<i class="bi bi-trash"></i> Delete Usage';
+    }
+  });
+}
