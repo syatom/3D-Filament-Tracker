@@ -7,9 +7,10 @@ services:
     ports:
       - "5000:5000"
     environment:
+      - FLASK_APP=run.py
       - FLASK_ENV=production
       - SECRET_KEY=${SECRET_KEY:-change-this-secret-key-in-production}
-      - DATABASE_URI=sqlite:///instance/spool_tracker.db
+      - DATABASE_URI=sqlite:////app/instance/spool_tracker.db
     volumes:
       # Persist database across container restarts
       - ./instance:/app/instance

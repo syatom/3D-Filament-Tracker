@@ -6,22 +6,17 @@ echo "Starting Spool Tracker..."
 # Wait a moment for any dependencies to be ready
 sleep 2
 
-# Initialize database if migrations don't exist
-if [ ! -d "migrations" ]; then
+# Initialize database if migrations/env.py doesn't exist
+if [ ! -f "migrations/env.py" ]; then
     echo "Initializing database migrations..."
     flask db init
+    echo "Creating initial migration..."
+    flask db migrate -m "Initial migration"
 fi
 
 # Run database migrations
 echo "Running database migrations..."
 flask db upgrade
-
-# Check if we need to create initial migration
-if [ ! "$(ls -A migrations/versions 2>/dev/null)" ]; then
-    echo "Creating initial migration..."
-    flask db migrate -m "Initial migration"
-    flask db upgrade
-fi
 
 echo "Database setup complete!"
 
