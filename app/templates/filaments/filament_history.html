@@ -88,9 +88,9 @@
                         <tbody>
                             {% set displayed_multicolor = [] %}
                             {% for record in history %}
-                            {% if record.is_multicolor and record.multicolor_print_id in displayed_multicolor %}
+                            {% if record.is_multicolor|default(false) and record.multicolor_print_id in displayed_multicolor %}
                                 {# Skip already displayed multicolor prints #}
-                            {% elif record.is_multicolor %}
+                            {% elif record.is_multicolor|default(false) %}
                                 {% set _ = displayed_multicolor.append(record.multicolor_print_id) %}
                                 {# Multicolor Print Row #}
                                 <tr class="multicolor-print-row" data-multicolor-id="{{ record.multicolor_print_id }}">

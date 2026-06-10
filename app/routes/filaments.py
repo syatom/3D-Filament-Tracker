@@ -120,25 +120,31 @@ def filament_history(id):
     history = filament.print_history.all()
     
     # Group multicolor prints and gather related filaments info
+    # Check if multicolor_print_id column exists (for backward compatibility during migration)
     multicolor_groups = {}
-    for record in history:
-        if record.is_multicolor and record.multicolor_print_id not in multicolor_groups:
-            # Get all related filaments for this multicolor print
-            related_records = PrintHistory.query.filter_by(
-                multicolor_print_id=record.multicolor_print_id
-            ).all()
-            
-            related_filaments = []
-            for rel_record in related_records:
-                rel_filament = Filament.query.get(rel_record.filament_id)
-                if rel_filament:
-                    related_filaments.append({
-                        'filament': rel_filament,
-                        'weight_used': rel_record.weight_used,
-                        'record_id': rel_record.id
-                    })
-            
-            multicolor_groups[record.multicolor_print_id] = related_filaments
+    try:
+        for record in history:
+            if hasattr(record, 'multicolor_print_id') and record.is_multicolor and record.multicolor_print_id not in multicolor_groups:
+                # Get all related filaments for this multicolor print
+                related_records = PrintHistory.query.filter_by(
+                    multicolor_print_id=record.multicolor_print_id
+                ).all()
+                
+                related_filaments = []
+                for rel_record in related_records:
+                    rel_filament = Filament.query.get(rel_record.filament_id)
+                    if rel_filament:
+                        related_filaments.append({
+                            'filament': rel_filament,
+                            'weight_used': rel_record.weight_used,
+                            'record_id': rel_record.id
+                        })
+                
+                multicolor_groups[record.multicolor_print_id] = related_filaments
+    except Exception as e:
+        # If multicolor column doesn't exist yet, just use empty dict
+        print(f"Multicolor grouping not available: {e}")
+        multicolor_groups = {}
     
     return render_template('filaments/filament_history.html', 
                          title=f'History - {filament.type} {filament.color}',
@@ -424,11 +430,11 @@ def delete_usage(filament_id, usage_id):
     if usage.filament_id != filament.id:
         return jsonify({'success': False, 'error': 'Usage does not belong to this filament'}), 400
     
-    # Check if this is a multicolor print
-    is_multicolor = usage.is_multicolor
-    multicolor_print_id = usage.multicolor_print_id
+    # Check if this is a multicolor print (with backward compatibility check)
+    is_multicolor = getattr(usage, 'is_multicolor', False)
+    multicolor_print_id = getattr(usage, 'multicolor_print_id', None)
     
-    if is_multicolor:
+    if is_multicolor and multicolor_print_id:
         # Delete all related multicolor print entries
         related_usages = PrintHistory.query.filter_by(multicolor_print_id=multicolor_print_id).all()
         

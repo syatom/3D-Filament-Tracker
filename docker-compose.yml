@@ -14,8 +14,7 @@ services:
     volumes:
       # Persist database across container restarts
       - ./instance:/app/instance
-      # Persist migrations
-      - ./migrations:/app/migrations
+      # Note: migrations are baked into the Docker image, not mounted from host
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/auth/login"]
