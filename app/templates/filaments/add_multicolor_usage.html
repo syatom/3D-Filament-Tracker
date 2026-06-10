@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Add Multicolor Print (AMS) - Spool Tracker{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10 col-lg-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0"><i class="bi bi-palette-fill"></i> Record Multicolor Print (AMS)</h3>
+                <small>Select up to 16 filaments for this multicolor print</small>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('filaments.add_multicolor_usage') }}" id="multicolorForm">
+                    {{ form.hidden_tag() }}
+                    
+                    <!-- Print Name and Component Name -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            {{ form.print_name.label(class="form-label") }}
+                            {{ form.print_name(class="form-control" + (" is-invalid" if form.print_name.errors else ""), placeholder="e.g., Multi-color Vase") }}
+                            <div class="form-text">{{ form.print_name.description }}</div>
+                            {% if form.print_name.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.print_name.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.component_name.label(class="form-label") }}
+                            {{ form.component_name(class="form-control" + (" is-invalid" if form.component_name.errors else ""), placeholder="e.g., Full Print") }}
+                            <div class="form-text">{{ form.component_name.description }}</div>
+                            {% if form.component_name.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.component_name.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Filament Selection -->
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Select Filaments</strong> <span class="text-muted">(Maximum 16)</span></label>
+                        <div id="filament-selection-count" class="text-muted small mb-2">
+                            <span id="selected-count">0</span> filament(s) selected
+                        </div>
+                        
+                        <div class="row" id="filamentSelectionList">
+                            {% for filament in active_filaments %}
+                            <div class="col-md-6 mb-2">
+                                <div class="form-check d-flex align-items-center">
+                                    <input class="form-check-input filament-checkbox me-2" 
+                                           type="checkbox" 
+                                           name="filament_ids[]" 
+                                           value="{{ filament.id }}"
+                                           id="filament_{{ filament.id }}"
+                                           data-type="{{ filament.type }}"
+                                           data-color="{{ filament.color }}"
+                                           data-color-hex="{{ filament.color_hex or '#808080' }}"
+                                           data-available="{{ filament.current_weight|round(1) }}"
+                                           style="margin-top: 0;"
+                                           {% if overflow and filament.id|string in selected_ids %}checked{% endif %}>
+                                    <label class="form-check-label d-flex align-items-center mb-0" for="filament_{{ filament.id }}">
+                                        <span class="filament-color-circle me-2" style="background-color: {{ filament.color_hex or '#808080' }};"></span>
+                                        <span>
+                                            <strong>{{ filament.type }}</strong> - {{ filament.color }}
+                                            <span class="text-muted small">({{ filament.current_weight|round(1) }}g available)</span>
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Dynamic Weight Inputs -->
+                    <div id="weightInputsContainer" class="mb-3" style="display: none;">
+                        <label class="form-label"><strong>Usage per Filament</strong></label>
+                        <div id="weightInputsList" class="row">
+                            <!-- Dynamic weight inputs will be inserted here -->
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        {{ form.submit(class="btn btn-primary btn-lg") }}
+                        <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('.filament-checkbox');
+    const selectedCountSpan = document.getElementById('selected-count');
+    const weightInputsContainer = document.getElementById('weightInputsContainer');
+    const weightInputsList = document.getElementById('weightInputsList');
+    const MAX_FILAMENTS = 16;
+    
+    function updateSelectedFilaments() {
+        const selectedCheckboxes = Array.from(checkboxes).filter(cb => cb.checked);
+        const count = selectedCheckboxes.length;
+        
+        // Update count display
+        selectedCountSpan.textContent = count;
+        
+        // Enable/disable checkboxes based on max limit
+        checkboxes.forEach(cb => {
+            if (!cb.checked && count >= MAX_FILAMENTS) {
+                cb.disabled = true;
+            } else {
+                cb.disabled = false;
+            }
+        });
+        
+        // Show/hide weight inputs container
+        if (count > 0) {
+            weightInputsContainer.style.display = 'block';
+            generateWeightInputs(selectedCheckboxes);
+        } else {
+            weightInputsContainer.style.display = 'none';
+        }
+    }
+    
+    function generateWeightInputs(selectedCheckboxes) {
+        weightInputsList.innerHTML = '';
+        
+        selectedCheckboxes.forEach(checkbox => {
+            const filamentId = checkbox.value;
+            const type = checkbox.dataset.type;
+            const color = checkbox.dataset.color;
+            const colorHex = checkbox.dataset.colorHex;
+            const available = checkbox.dataset.available;
+            
+            const colDiv = document.createElement('div');
+            colDiv.className = 'col-md-6 mb-3';
+            
+            colDiv.innerHTML = `
+                <label class="form-label">
+                    <span class="filament-color-circle" style="background-color: ${colorHex};"></span>
+                    <strong>${type}</strong> - ${color}
+                </label>
+                <div class="input-group">
+                    <input type="number" 
+                           step="0.1" 
+                           min="0.1" 
+                           class="form-control weight-input" 
+                           name="weight_${filamentId}" 
+                           placeholder="Weight (g)"
+                           required
+                           data-available="${available}">
+                    <span class="input-group-text">g</span>
+                </div>
+                <div class="form-text">Available: ${available}g</div>
+            `;
+            
+            weightInputsList.appendChild(colDiv);
+        });
+    }
+    
+    // Attach event listeners
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateSelectedFilaments);
+    });
+    
+    // Initialize on page load (in case of validation errors with pre-selected items)
+    updateSelectedFilaments();
+});
+</script>
+{% endblock %}

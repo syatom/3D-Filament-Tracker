@@ -136,12 +136,27 @@ function initializeDeleteUsageModal() {
     const component = button.getAttribute("data-component");
     const weight = button.getAttribute("data-weight");
     const timestamp = button.getAttribute("data-timestamp");
+    const isMulticolor = button.getAttribute("data-is-multicolor") === "true";
 
     // Update modal content
     document.getElementById("modal-timestamp").textContent = timestamp;
     document.getElementById("modal-print-name").textContent = printName;
     document.getElementById("modal-component").textContent = component;
     document.getElementById("modal-weight").textContent = weight;
+    
+    // Show/hide multicolor warning
+    const multicolorWarning = document.getElementById("multicolor-warning");
+    const pluralFilaments = document.getElementById("plural-filaments");
+    
+    if (multicolorWarning && pluralFilaments) {
+      if (isMulticolor) {
+        multicolorWarning.style.display = "block";
+        pluralFilaments.style.display = "inline";
+      } else {
+        multicolorWarning.style.display = "none";
+        pluralFilaments.style.display = "none";
+      }
+    }
   });
 
   // Handle delete confirmation

@@ -1,6 +1,6 @@
 """WTForms for the application"""
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, FloatField, SubmitField, TextAreaField
+from wtforms import StringField, PasswordField, FloatField, SubmitField, TextAreaField, SelectMultipleField
 from wtforms.validators import DataRequired, Email, EqualTo, ValidationError, Length, NumberRange, Regexp
 from app.models import User
 
@@ -105,3 +105,19 @@ class LinkNewSpoolForm(FlaskForm):
     ])
     
     submit = SubmitField('Add New Spool')
+
+
+class MulticolorUsageForm(FlaskForm):
+    """Form for recording multicolor (AMS) print usage across multiple filaments"""
+    print_name = StringField('Print Name', validators=[
+        DataRequired(),
+        Length(max=200, message='Print name must be less than 200 characters')
+    ], description='Name or description of the multicolor print job')
+    
+    component_name = StringField('Component Name', validators=[
+        DataRequired(),
+        Length(max=200, message='Component name must be less than 200 characters')
+    ], description='Name of the printed part or component')
+    
+    submit = SubmitField('Record Multicolor Print')
+

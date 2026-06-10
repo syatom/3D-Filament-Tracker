@@ -5,9 +5,14 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="bi bi-house"></i> My Filaments</h2>
-    <a href="{{ url_for('filaments.add_filament') }}" class="btn btn-primary">
-        <i class="bi bi-plus-circle"></i> Add Filament
-    </a>
+    <div class="btn-group">
+        <a href="{{ url_for('filaments.add_filament') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Add Filament
+        </a>
+        <a href="{{ url_for('filaments.add_multicolor_usage') }}" class="btn btn-success">
+            <i class="bi bi-palette-fill"></i> Add Multicolor Print (AMS)
+        </a>
+    </div>
 </div>
 
 <!-- Search Bar -->

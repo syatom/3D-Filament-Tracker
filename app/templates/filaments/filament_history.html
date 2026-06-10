@@ -86,31 +86,99 @@
                             </tr>
                         </thead>
                         <tbody>
+                            {% set displayed_multicolor = [] %}
                             {% for record in history %}
-                            <tr>
-                                <td>
-                                    <i class="bi bi-calendar-event"></i>
-                                    {{ record.timestamp.strftime('%Y-%m-%d %H:%M') }}
-                                </td>
-                                <td><strong>{{ record.print_name }}</strong></td>
-                                <td>{{ record.component_name }}</td>
-                                <td class="text-end">
-                                    <span class="badge bg-info">{{ record.weight_used|round(1) }}g</span>
-                                </td>
-                                <td class="text-center">
-                                    <button type="button" class="btn btn-sm btn-outline-danger" 
-                                            data-bs-toggle="modal" 
-                                            data-bs-target="#deleteUsageModal"
-                                            data-usage-id="{{ record.id }}"
-                                            data-print-name="{{ record.print_name }}"
-                                            data-component="{{ record.component_name }}"
-                                            data-weight="{{ record.weight_used|round(1) }}"
-                                            data-timestamp="{{ record.timestamp.strftime('%Y-%m-%d %H:%M') }}"
-                                            title="Delete usage record">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
+                            {% if record.is_multicolor and record.multicolor_print_id in displayed_multicolor %}
+                                {# Skip already displayed multicolor prints #}
+                            {% elif record.is_multicolor %}
+                                {% set _ = displayed_multicolor.append(record.multicolor_print_id) %}
+                                {# Multicolor Print Row #}
+                                <tr class="multicolor-print-row" data-multicolor-id="{{ record.multicolor_print_id }}">
+                                    <td>
+                                        <i class="bi bi-calendar-event"></i>
+                                        {{ record.timestamp.strftime('%Y-%m-%d %H:%M') }}
+                                    </td>
+                                    <td>
+                                        <strong>{{ record.print_name }}</strong>
+                                        <span class="badge bg-success ms-2">
+                                            <i class="bi bi-palette-fill"></i> Multicolor
+                                        </span>
+                                        <button class="btn btn-sm btn-link text-decoration-none p-0 ms-2 toggle-multicolor" 
+                                                type="button"
+                                                data-multicolor-id="{{ record.multicolor_print_id }}">
+                                            <i class="bi bi-chevron-down"></i> Show Details
+                                        </button>
+                                    </td>
+                                    <td>{{ record.component_name }}</td>
+                                    <td class="text-end">
+                                        <span class="badge bg-info">{{ record.weight_used|round(1) }}g</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#deleteUsageModal"
+                                                data-usage-id="{{ record.id }}"
+                                                data-print-name="{{ record.print_name }}"
+                                                data-component="{{ record.component_name }}"
+                                                data-weight="{{ record.weight_used|round(1) }}"
+                                                data-timestamp="{{ record.timestamp.strftime('%Y-%m-%d %H:%M') }}"
+                                                data-is-multicolor="true"
+                                                title="Delete multicolor print (all filaments)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {# Expandable Details Row #}
+                                <tr class="multicolor-details-row" id="details-{{ record.multicolor_print_id }}" style="display: none;">
+                                    <td colspan="5" class="bg-light">
+                                        <div class="p-3">
+                                            <h6 class="text-dark"><i class="bi bi-palette-fill"></i> Filaments Used in This Print:</h6>
+                                            <div class="row">
+                                                {% for item in multicolor_groups[record.multicolor_print_id] %}
+                                                <div class="col-md-6 mb-2">
+                                                    <div class="card">
+                                                        <div class="card-body py-2 d-flex align-items-center">
+                                                            <span class="filament-color-circle me-2" style="background-color: {{ item.filament.color_hex or '#808080' }};"></span>
+                                                            <span class="flex-grow-1">
+                                                                <strong>{{ item.filament.type }}</strong> - {{ item.filament.color }}
+                                                            </span>
+                                                            <span class="badge bg-info">{{ item.weight_used|round(1) }}g</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                {# Single-color Print Row #}
+                                <tr>
+                                    <td>
+                                        <i class="bi bi-calendar-event"></i>
+                                        {{ record.timestamp.strftime('%Y-%m-%d %H:%M') }}
+                                    </td>
+                                    <td><strong>{{ record.print_name }}</strong></td>
+                                    <td>{{ record.component_name }}</td>
+                                    <td class="text-end">
+                                        <span class="badge bg-info">{{ record.weight_used|round(1) }}g</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#deleteUsageModal"
+                                                data-usage-id="{{ record.id }}"
+                                                data-print-name="{{ record.print_name }}"
+                                                data-component="{{ record.component_name }}"
+                                                data-weight="{{ record.weight_used|round(1) }}"
+                                                data-timestamp="{{ record.timestamp.strftime('%Y-%m-%d %H:%M') }}"
+                                                data-is-multicolor="false"
+                                                title="Delete usage record">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            {% endif %}
                             {% endfor %}
                         </tbody>
                         <tfoot>
@@ -151,6 +219,10 @@
             </div>
             <div class="modal-body">
                 <p class="mb-3">Are you sure you want to delete this usage record?</p>
+                <div class="alert alert-warning" id="multicolor-warning" style="display: none;">
+                    <i class="bi bi-exclamation-triangle"></i> <strong>This is a multicolor print!</strong><br>
+                    Deleting this will remove usage records from <strong>all filaments</strong> used in this print and restore their weights.
+                </div>
                 <div class="alert alert-info">
                     <strong>Usage Details:</strong><br>
                     <i class="bi bi-calendar-event"></i> <span id="modal-timestamp"></span><br>
@@ -158,8 +230,8 @@
                     <i class="bi bi-puzzle"></i> <strong>Component:</strong> <span id="modal-component"></span><br>
                     <i class="bi bi-arrow-down-circle"></i> <strong>Weight Used:</strong> <span id="modal-weight"></span>g
                 </div>
-                <div class="alert alert-warning">
-                    <i class="bi bi-info-circle"></i> The weight will be restored to the filament.
+                <div class="alert alert-success" id="restore-notice">
+                    <i class="bi bi-info-circle"></i> The weight will be restored to the filament<span id="plural-filaments" style="display: none;">s</span>.
                 </div>
             </div>
             <div class="modal-footer">
@@ -173,4 +245,32 @@
         </div>
     </div>
 </div>
+
+<script>
+// Handle multicolor print expand/collapse
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleButtons = document.querySelectorAll('.toggle-multicolor');
+    
+    toggleButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const multicolorId = this.dataset.multicolorId;
+            const detailsRow = document.getElementById('details-' + multicolorId);
+            const icon = this.querySelector('i');
+            
+            if (detailsRow.style.display === 'none') {
+                detailsRow.style.display = 'table-row';
+                icon.classList.remove('bi-chevron-down');
+                icon.classList.add('bi-chevron-up');
+                this.innerHTML = '<i class="bi bi-chevron-up"></i> Hide Details';
+            } else {
+                detailsRow.style.display = 'none';
+                icon.classList.remove('bi-chevron-up');
+                icon.classList.add('bi-chevron-down');
+                this.innerHTML = '<i class="bi bi-chevron-down"></i> Show Details';
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

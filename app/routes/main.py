@@ -82,10 +82,22 @@ def statistics():
         Filament.user_id == current_user.id
     ).group_by(Filament.id).order_by(desc('total_used')).limit(10).all()
     
-    # Total number of prints
-    total_prints = PrintHistory.query.join(Filament).filter(
-        Filament.user_id == current_user.id
+    # Total number of prints (count unique multicolor_print_id groups + single prints)
+    # Count single-color prints (multicolor_print_id is NULL)
+    single_color_prints = PrintHistory.query.join(Filament).filter(
+        Filament.user_id == current_user.id,
+        PrintHistory.multicolor_print_id.is_(None)
     ).count()
+    
+    # Count distinct multicolor prints (unique multicolor_print_id values)
+    multicolor_prints = db.session.query(
+        func.count(func.distinct(PrintHistory.multicolor_print_id))
+    ).join(Filament).filter(
+        Filament.user_id == current_user.id,
+        PrintHistory.multicolor_print_id.isnot(None)
+    ).scalar() or 0
+    
+    total_prints = single_color_prints + multicolor_prints
     
     # Active filaments count
     active_count = Filament.query.filter_by(

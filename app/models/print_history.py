@@ -13,6 +13,12 @@ class PrintHistory(db.Model):
     print_name = db.Column(db.String(200), nullable=False)
     component_name = db.Column(db.String(200), nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
+    multicolor_print_id = db.Column(db.String(36), nullable=True, index=True)  # UUID for grouped multicolor prints
+    
+    @property
+    def is_multicolor(self):
+        """Check if this is part of a multicolor print"""
+        return self.multicolor_print_id is not None
     
     def __repr__(self):
         return f'<PrintHistory {self.print_name} - {self.weight_used}g>'
