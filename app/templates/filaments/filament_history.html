@@ -114,18 +114,39 @@
                                         <span class="badge bg-info">{{ record.weight_used|round(1) }}g</span>
                                     </td>
                                     <td class="text-center">
-                                        <button type="button" class="btn btn-sm btn-outline-danger" 
-                                                data-bs-toggle="modal" 
-                                                data-bs-target="#deleteUsageModal"
-                                                data-usage-id="{{ record.id }}"
-                                                data-print-name="{{ record.print_name }}"
-                                                data-component="{{ record.component_name }}"
-                                                data-weight="{{ record.weight_used|round(1) }}"
-                                                data-timestamp="{{ record.timestamp.strftime('%Y-%m-%d %H:%M') }}"
-                                                data-is-multicolor="true"
-                                                title="Delete multicolor print (all filaments)">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
+                                        <div class="btn-group" role="group">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                                                    data-bs-toggle="dropdown" 
+                                                    aria-expanded="false"
+                                                    title="Actions">
+                                                <i class="bi bi-three-dots"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li>
+                                                    <a class="dropdown-item duplicate-usage" href="#"
+                                                       data-filament-id="{{ filament.id }}"
+                                                       data-usage-id="{{ record.id }}"
+                                                       data-print-name="{{ record.print_name }}"
+                                                       data-is-multicolor="true">
+                                                        <i class="bi bi-copy"></i> Duplicate
+                                                    </a>
+                                                </li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <a class="dropdown-item text-danger delete-usage" href="#"
+                                                       data-bs-toggle="modal" 
+                                                       data-bs-target="#deleteUsageModal"
+                                                       data-usage-id="{{ record.id }}"
+                                                       data-print-name="{{ record.print_name }}"
+                                                       data-component="{{ record.component_name }}"
+                                                       data-weight="{{ record.weight_used|round(1) }}"
+                                                       data-timestamp="{{ record.timestamp.strftime('%Y-%m-%d %H:%M') }}"
+                                                       data-is-multicolor="true">
+                                                        <i class="bi bi-trash"></i> Delete
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
                                     </td>
                                 </tr>
                                 {# Expandable Details Row #}
@@ -164,18 +185,39 @@
                                         <span class="badge bg-info">{{ record.weight_used|round(1) }}g</span>
                                     </td>
                                     <td class="text-center">
-                                        <button type="button" class="btn btn-sm btn-outline-danger" 
-                                                data-bs-toggle="modal" 
-                                                data-bs-target="#deleteUsageModal"
-                                                data-usage-id="{{ record.id }}"
-                                                data-print-name="{{ record.print_name }}"
-                                                data-component="{{ record.component_name }}"
-                                                data-weight="{{ record.weight_used|round(1) }}"
-                                                data-timestamp="{{ record.timestamp.strftime('%Y-%m-%d %H:%M') }}"
-                                                data-is-multicolor="false"
-                                                title="Delete usage record">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
+                                        <div class="btn-group" role="group">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                                                    data-bs-toggle="dropdown" 
+                                                    aria-expanded="false"
+                                                    title="Actions">
+                                                <i class="bi bi-three-dots"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li>
+                                                    <a class="dropdown-item duplicate-usage" href="#"
+                                                       data-filament-id="{{ filament.id }}"
+                                                       data-usage-id="{{ record.id }}"
+                                                       data-print-name="{{ record.print_name }}"
+                                                       data-is-multicolor="false">
+                                                        <i class="bi bi-copy"></i> Duplicate
+                                                    </a>
+                                                </li>
+                                                <li><hr class="dropdown-divider"></li>
+                                                <li>
+                                                    <a class="dropdown-item text-danger delete-usage" href="#"
+                                                       data-bs-toggle="modal" 
+                                                       data-bs-target="#deleteUsageModal"
+                                                       data-usage-id="{{ record.id }}"
+                                                       data-print-name="{{ record.print_name }}"
+                                                       data-component="{{ record.component_name }}"
+                                                       data-weight="{{ record.weight_used|round(1) }}"
+                                                       data-timestamp="{{ record.timestamp.strftime('%Y-%m-%d %H:%M') }}"
+                                                       data-is-multicolor="false">
+                                                        <i class="bi bi-trash"></i> Delete
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
                                     </td>
                                 </tr>
                             {% endif %}
