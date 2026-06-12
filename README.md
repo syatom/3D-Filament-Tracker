@@ -7,12 +7,16 @@ A Flask web application for tracking 3D printer filament spools, recording print
 - **Multi-user Authentication** - Secure user registration and login
 - **Filament Management** - Add, edit, and archive filament spools
 - **Usage Tracking** - Record weight used for each print job
-- **Smart Archive** - Automatically archive empty spools
+- **Multicolor Print Support** - Track prints using multiple filaments (AMS) with up to 16 colors per print
+- **Delete Usage** - Remove print history entries with automatic weight restoration
+- **Smart Archive** - Automatically archive empty spools (and unarchive when weight is restored)
 - **Overflow Handling** - Link new spools when usage exceeds remaining weight
-- **Print History** - View complete usage history for each spool
+- **Print History** - View complete usage history for each spool with expandable multicolor details
 - **Statistics Dashboard** - Visualize usage by type, color, and more
 - **Low Filament Warnings** - Get alerts when spools are running low (<20%)
 - **Search & Filter** - Easily find filaments by type or color
+- **Dynamic Color Display** - Filament cards automatically use color hex codes for visual identification
+- **Dark Mode** - User-specific dark mode preference with smooth transitions
 - **Responsive UI** - Bootstrap 5 interface works on all devices
 - **Docker Ready** - Fully containerized for easy deployment
 
@@ -89,11 +93,22 @@ python run.py
 
 ### Recording Usage
 
+**Single Color Print:**
+
 1. Click on a filament card or use "Add Usage" button
 2. Enter weight used in grams
 3. Enter print name (e.g., "Phone Stand")
 4. Enter component name (e.g., "Base")
 5. Submit - the remaining weight will be automatically calculated
+
+**Multicolor Print (AMS):**
+
+1. Click "Add Multicolor Usage" button
+2. Select up to 16 filaments using checkboxes
+3. Enter weight used for each selected filament
+4. Enter print name and component name
+5. Submit - all filaments will be updated and grouped together
+6. View grouped multicolor prints in history with expandable details
 
 ### Handling Overflow
 
@@ -116,13 +131,29 @@ Navigate to Statistics page to see:
 - Low filament warnings
 - Active vs archived spool counts
 
+### Deleting Usage Records
+
+1. View filament history for any spool
+2. Click the delete (trash) icon next to any usage entry
+3. Confirm deletion in the modal dialog
+4. Weight will be automatically restored to the filament
+5. For multicolor prints, all related entries are deleted together
+6. Archived filaments are automatically unarchived if weight becomes positive
+
 ### Archived Filaments
 
 - Spools are automatically archived when weight reaches 0
 - Manual archive is also available
 - View archived spools under "Archived" section
 - Print history is preserved for archived spools
-- Can unarchive if needed
+- Can unarchive manually or automatically when weight is restored
+
+### Dark Mode
+
+- Toggle dark mode using the button in the user dropdown menu
+- Preference is saved per user and persists across sessions
+- Smooth transitions between light and dark themes
+- Optimized colors for all UI elements including cards, tables, and charts
 
 ## Configuration
 
@@ -210,7 +241,8 @@ spool_tracker/
 │   └── static/              # CSS, JS, images
 │       ├── css/
 │       └── js/
-├── instance/                # Database storage
+├── instance/                # Dat
+- `POST /auth/toggle-dark-mode` - Toggle user's dark mode preferenceabase storage
 ├── migrations/              # Database migrations
 ├── config.py               # Configuration
 ├── run.py                  # Application entry point
@@ -241,7 +273,9 @@ spool_tracker/
 - `POST /filaments/<id>/unarchive` - Unarchive filament
 - `GET /filaments/<id>/history` - View print history
 - `GET/POST /filaments/<id>/add-usage` - Record usage
-- `POST /filaments/<id>/add-usage-with-overflow` - Record usage with overflow
+- `POS/POST /filaments/add-multicolor-usage` - Record multicolor (AMS) print usage
+- `POST /filaments/delete-usage` - Delete usage record and restore weight
+- `GETT /filaments/<id>/add-usage-with-overflow` - Record usage with overflow
 - `GET /filaments/archived` - View archived filaments
 
 ## Development
@@ -312,8 +346,10 @@ Potential features for future versions:
 - Barcode/QR code scanning
 - Export reports to PDF/CSV
 - Mobile app
-- Filament vendor management
-- Print time tracking
+- Duplicate print functionality
+- API endpoints for external integrations
+- Enhanced statistics and reporting
+- Filament temperature and settings tracking
 - Multi-filament prints support
 - API endpoints for external integrations
 
