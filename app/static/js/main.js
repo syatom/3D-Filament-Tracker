@@ -104,6 +104,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Initialize delete usage modal
   initializeDeleteUsageModal();
+
+  // Initialize duplicate usage handlers
+  initializeDuplicateUsageHandlers();
 });
 
 // ========================================
@@ -252,4 +255,87 @@ function showFlashMessage(message, category) {
     alert.classList.remove("show");
     setTimeout(() => alert.remove(), 150);
   }, 5000);
+}
+
+// ========================================
+// DUPLICATE USAGE FUNCTIONALITY
+// ========================================
+
+/**
+ * Handle duplicate usage action
+ * @param {number} filamentId - The filament ID
+ * @param {number} usageId - The usage/print history ID to duplicate
+ * @param {string} printName - The print name (for user feedback)
+ * @param {boolean} isMulticolor - Whether this is a multicolor print
+ */
+function handleDuplicateUsage(filamentId, usageId, printName, isMulticolor) {
+  // Send duplicate request
+  fetch(`/filaments/${filamentId}/usage/${usageId}/duplicate`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCsrfToken(),
+    },
+    credentials: "same-origin",
+  })
+    .then((response) => {
+      if (!response.ok) {
+        return response.json().then((data) => {
+          throw new Error(
+            data.error || `HTTP error! status: ${response.status}`,
+          );
+        });
+      }
+      return response.json();
+    })
+    .then((data) => {
+      if (data.success) {
+        // Show success message
+        const message = isMulticolor
+          ? `Multicolor print "${printName}" duplicated successfully across ${data.filaments_updated ? data.filaments_updated.length : "multiple"} filaments!`
+          : `Print "${printName}" duplicated successfully!`;
+
+        showFlashMessage(message, "success");
+
+        // Reload page after short delay to show the duplicated print
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      } else {
+        throw new Error(data.error || "Failed to duplicate print");
+      }
+    })
+    .catch((error) => {
+      console.error("Error duplicating print:", error);
+      showFlashMessage(`Error: ${error.message}`, "danger");
+    });
+}
+
+/**
+ * Initialize duplicate usage handlers
+ */
+function initializeDuplicateUsageHandlers() {
+  // Find all duplicate buttons
+  const duplicateButtons = document.querySelectorAll(".duplicate-usage");
+
+  duplicateButtons.forEach((button) => {
+    button.addEventListener("click", function (e) {
+      e.preventDefault();
+
+      // Extract data attributes
+      const filamentId = this.getAttribute("data-filament-id");
+      const usageId = this.getAttribute("data-usage-id");
+      const printName = this.getAttribute("data-print-name");
+      const isMulticolor = this.getAttribute("data-is-multicolor") === "true";
+
+      // Confirm action with user
+      const confirmMessage = isMulticolor
+        ? `Duplicate this multicolor print "${printName}"? This will create a new print across all filaments in the group.`
+        : `Duplicate print "${printName}"?`;
+
+      if (confirm(confirmMessage)) {
+        handleDuplicateUsage(filamentId, usageId, printName, isMulticolor);
+      }
+    });
+  });
 }

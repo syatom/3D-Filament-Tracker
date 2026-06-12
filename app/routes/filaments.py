@@ -495,3 +495,125 @@ def delete_usage(filament_id, usage_id):
             'was_unarchived': was_unarchived,
             'is_multicolor': False
         })
+
+
+@filaments_bp.route('/<int:filament_id>/usage/<int:usage_id>/duplicate', methods=['POST'])
+@login_required
+def duplicate_usage(filament_id, usage_id):
+    """Duplicate a print usage record. For multicolor prints, duplicates all related entries with a new UUID."""
+    # Get the filament and verify ownership
+    filament = Filament.query.get_or_404(filament_id)
+    
+    if filament.user_id != current_user.id:
+        abort(403)
+    
+    # Get the original usage record
+    original_usage = PrintHistory.query.get_or_404(usage_id)
+    
+    # Verify the usage belongs to this filament
+    if original_usage.filament_id != filament.id:
+        return jsonify({'success': False, 'error': 'Usage does not belong to this filament'}), 400
+    
+    # Check if this is a multicolor print
+    is_multicolor = getattr(original_usage, 'is_multicolor', False)
+    multicolor_print_id = getattr(original_usage, 'multicolor_print_id', None)
+    
+    if is_multicolor and multicolor_print_id:
+        # Duplicate multicolor print across all filaments
+        related_usages = PrintHistory.query.filter_by(multicolor_print_id=multicolor_print_id).all()
+        
+        # Generate new UUID for the duplicated print group
+        new_multicolor_id = str(uuid.uuid4())
+        
+        # First, check if all filaments have enough weight (overflow detection)
+        overflow_filaments = []
+        for related_usage in related_usages:
+            related_filament = Filament.query.get(related_usage.filament_id)
+            
+            # Verify ownership of all related filaments
+            if related_filament.user_id != current_user.id:
+                return jsonify({'success': False, 'error': 'Unauthorized access to related filament'}), 403
+            
+            # Check for overflow
+            if related_usage.weight_used > related_filament.current_weight:
+                overflow_filaments.append(f'{related_filament.type} - {related_filament.color}')
+        
+        # If any filament has overflow, abort the entire operation
+        if overflow_filaments:
+            overflow_list = ', '.join(overflow_filaments)
+            flash(f'Cannot duplicate print: Not enough weight in {overflow_list}', 'danger')
+            return jsonify({
+                'success': False,
+                'error': f'Not enough weight in: {overflow_list}',
+                'overflow_filaments': overflow_filaments
+            }), 400
+        
+        # All checks passed, now create the duplicate records
+        filaments_updated = []
+        for related_usage in related_usages:
+            related_filament = Filament.query.get(related_usage.filament_id)
+            
+            # Manually create PrintHistory record with multicolor_print_id
+            new_history = PrintHistory(
+                filament_id=related_filament.id,
+                weight_used=related_usage.weight_used,
+                print_name=related_usage.print_name,
+                component_name=related_usage.component_name,
+                multicolor_print_id=new_multicolor_id
+            )
+            db.session.add(new_history)
+            
+            # Update filament weight
+            related_filament.current_weight -= related_usage.weight_used
+            
+            # Auto-archive if empty
+            if related_filament.current_weight <= 0:
+                related_filament.current_weight = 0
+                related_filament.archive()
+            
+            filaments_updated.append(f'{related_filament.type} - {related_filament.color}')
+        
+        db.session.commit()
+        
+        flash(f'Multicolor print duplicated successfully across {len(filaments_updated)} filaments!', 'success')
+        
+        return jsonify({
+            'success': True,
+            'message': f'Multicolor print duplicated successfully across {len(filaments_updated)} filaments.',
+            'filaments_updated': filaments_updated,
+            'is_multicolor': True,
+            'redirect': url_for('main.index')
+        })
+    else:
+        # Single filament print duplication
+        weight_used = original_usage.weight_used
+        print_name = original_usage.print_name
+        component_name = original_usage.component_name
+        
+        # Check for overflow
+        if weight_used > filament.current_weight:
+            flash(f'Cannot duplicate print: Not enough weight available. Need {weight_used}g but only have {filament.current_weight}g.', 'danger')
+            return jsonify({
+                'success': False,
+                'error': f'Not enough weight. Need {weight_used}g but only have {filament.current_weight}g.'
+            }), 400
+        
+        # Create duplicate record using the filament's add_usage method
+        filament.add_usage(
+            weight_used=weight_used,
+            print_name=print_name,
+            component_name=component_name
+        )
+        
+        db.session.commit()
+        
+        flash(f'Print "{print_name}" duplicated successfully!', 'success')
+        
+        return jsonify({
+            'success': True,
+            'message': 'Print duplicated successfully!',
+            'weight_used': weight_used,
+            'new_current_weight': filament.current_weight,
+            'is_multicolor': False,
+            'redirect': url_for('filaments.filament_history', id=filament.id)
+        })
