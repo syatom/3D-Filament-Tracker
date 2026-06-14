@@ -10,7 +10,10 @@
     <div class="col-md-3">
         <div class="card text-white bg-primary shadow">
             <div class="card-body text-center">
-                <h3 class="mb-0">{{ total_used|round(1) }}g</h3>
+                <h3 class="mb-0">
+                    {{ (total_used / 1000)|round(3) if total_used >= 1000 else total_used|round(3) }}
+                    {{ "kg" if total_used >= 1000 else "g" }}
+                </h3>
                 <small>Total Filament Used</small>
             </div>
         </div>
