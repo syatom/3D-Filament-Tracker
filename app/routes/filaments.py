@@ -190,7 +190,8 @@ def add_usage(id):
                                  overflow_amount=overflow_amount,
                                  weight_used=weight_used,
                                  print_name=form.print_name.data,
-                                 component_name=form.component_name.data)
+                                 component_name=form.component_name.data,
+                                 color_hex=filament.color_hex)
         
         # Add usage record
         filament.add_usage(
@@ -233,7 +234,7 @@ def add_usage_with_overflow(id):
     # New spool data
     new_type = request.form.get('new_type')
     new_color = request.form.get('new_color')
-    new_color_hex = request.form.get('new_color_hex', '#808080')
+    new_color_hex = request.form.get('color_hex', '#808080')
     new_starting_weight = float(request.form.get('new_starting_weight'))
     
     # Calculate overflow
@@ -253,9 +254,10 @@ def add_usage_with_overflow(id):
         color=new_color,
         color_hex=new_color_hex,
         starting_weight=new_starting_weight,
-        current_weight=new_starting_weight - overflow_amount
+        current_weight=new_starting_weight
     )
     db.session.add(new_filament)
+    db.session.flush()  # Ensure new_filament.id is populated
     
     # Record overflow usage on new spool
     new_filament.add_usage(

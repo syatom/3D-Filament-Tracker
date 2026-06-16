@@ -83,6 +83,11 @@ class UsageForm(FlaskForm):
         DataRequired(),
         Length(max=200, message='Component name must be less than 200 characters')
     ], description='Name of the printed part or component')
+
+    color_hex = StringField('Color Code', validators=[
+        DataRequired(),
+        Regexp(r'^#[0-9A-Fa-f]{6}$', message='Must be a valid hex color code (e.g., #FF0000)')
+    ], default='#808080', description='Visual color representation')
     
     submit = SubmitField('Record Usage')
 

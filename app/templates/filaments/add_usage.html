@@ -100,6 +100,7 @@
                     <input type="hidden" name="weight_used" value="{{ weight_used }}">
                     <input type="hidden" name="print_name" value="{{ print_name }}">
                     <input type="hidden" name="component_name" value="{{ component_name }}">
+                    <input type="hidden" name="color_hex" value="{{ color_hex }}">
                     
                     <div class="mb-3">
                         <label for="new_type" class="form-label">New Spool Type</label>
@@ -111,6 +112,20 @@
                         <label for="new_color" class="form-label">New Spool Color</label>
                         <input type="text" class="form-control" id="new_color" name="new_color" 
                                value="{{ filament.color }}" required>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.color_hex.label(class="form-label") }}
+                        <div class="d-flex gap-2 align-items-center">
+                            {{ form.color_hex(type="color", value=color_hex, class="form-control form-control-color" + (" is-invalid" if form.color_hex.errors else ""), style="width: 80px; height: 40px;") }}
+                            {{ form.color_hex(class="form-control" + (" is-invalid" if form.color_hex.errors else ""), placeholder=color_hex, value=color_hex, style="flex: 1;") }}
+                        </div>
+                        <div class="form-text">{{ form.color_hex.description }}</div>
+                        {% if form.color_hex.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.color_hex.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
                     </div>
                     
                     <div class="mb-3">
